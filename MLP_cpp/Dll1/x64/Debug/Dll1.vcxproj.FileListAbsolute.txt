@@ -1,0 +1,2 @@
+C:\Users\cedri\Documents\ESGI_Cours_5AS1\Machine Learning\MLP_cpp\Dll1\x64\Debug\Dll1.dll
+C:\Users\cedri\Documents\ESGI_Cours_5AS1\Machine Learning\MLP_cpp\Dll1\x64\Debug\Dll1.pdb
