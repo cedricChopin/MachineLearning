@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: OutputExpected
   m_EditorClassIdentifier: 
   Output:
-  - -1
-  - -1
-  - -1
+  - 1
+  - 1
   - 1

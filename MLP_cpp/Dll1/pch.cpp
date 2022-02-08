@@ -113,13 +113,13 @@ extern "C" {
                     model->deltas[model->L][j] *= (1 - (model->X[model->L][j] * model->X[model->L][j]));
                 }
             }
-            for (int l = model->L; l > 2; --l) {
+            for (int l = model->L; l >= 2; --l) {
                 for (int i = 1; i < model->npl[l - 1] + 1; ++i) {
                     double total = 0.0;
                     for (int j = 1; j < model->npl[l] + 1; ++j) {
                         total += model->W[l][i][j] * model->deltas[l][j];
                     }
-                    total *= (1 - pow(model->X[l - 1][i], 2));
+                    total *= (1 - (model->X[l - 1][i] * model->X[l - 1][i]));
                     model->deltas[l - 1][i] = total;
                     
                 }

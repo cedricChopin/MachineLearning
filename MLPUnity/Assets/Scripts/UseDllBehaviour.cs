@@ -16,11 +16,17 @@ public class UseDllBehaviour : MonoBehaviour
     public List<double[]> dataset_expected_outputs;
     public double[] resultBeforeTraining;
     public double[] resultAfterTraining;
+    List<double[]> dataset_inputsCross;
+    List<double[]> dataset_outputsCross;
     private GameObject spawn;
     private IntPtr modelPtr;
     void Start()
     {
+        
         nbInput = points.positions.Count;
+        nbInput = 500;
+        dataset_inputsCross = inputCross();
+        dataset_outputsCross = outputCross(dataset_inputsCross);
         if (points.positions.Count != outputExpected.Output.Count)
         {
             EditorApplication.isPlaying = false;
@@ -32,13 +38,15 @@ public class UseDllBehaviour : MonoBehaviour
         {
             dataset_inputs.Add(new double[] { point.x, point.y });
         }
-
+        
         dataset_expected_outputs = new List<double[]>();
         foreach(float resExpected in outputExpected.Output)
         {
             dataset_expected_outputs.Add(new double[] { resExpected });
         }
-
+        dataset_inputs = dataset_inputsCross;
+        dataset_expected_outputs = dataset_outputsCross;
+        
         try
         {
             IntPtr[] PtrSampleInputs = new IntPtr[nbInput];
@@ -61,7 +69,7 @@ public class UseDllBehaviour : MonoBehaviour
                 Marshal.Copy(resultPtr, result, 0, 2);
                 resultBeforeTraining[i] = result[1];
             }
-            MyLibWrapper.trainMlpModel(modelPtr, PtrSampleInputs, PtrExpectedOutputs, 4, 4, true, 0.01, 100000);
+            MyLibWrapper.trainMlpModel(modelPtr, PtrSampleInputs, PtrExpectedOutputs, nbInput, nbInput, true, 0.01, 100000);
             
             resultAfterTraining = new double[nbInput];
             for (int i = 0; i < nbInput; i++)
@@ -70,6 +78,7 @@ public class UseDllBehaviour : MonoBehaviour
                 var result = new double[2];
                 Marshal.Copy(resultPtr, result, 0, 2);
                 resultAfterTraining[i] = result[1];
+                //resultAfterTraining[i] = dataset_expected_outputs[i][0];
             }
 
             spawnSphereTest(); 
@@ -84,27 +93,66 @@ public class UseDllBehaviour : MonoBehaviour
             Debug.Log("error");
         }
     }
+
+
     private void Update()
     {
-        for (int i = 0; i < nbInput; i++)
+        /*for (int i = 0; i < nbInput; i++)
         {
-            dataset_inputs[i] = new double[] { points.positions[i].x, points.positions[i].y };
+            //dataset_inputs[i] = new double[] { points.positions[i].x, points.positions[i].y };
             var resultPtr = MyLibWrapper.predictMlpModelClassification(modelPtr, dataset_inputs[i], true);
             var result = new double[3];
             Marshal.Copy(resultPtr, result, 0, 3);
             resultAfterTraining[i] = result[1];
-        }
+        }*/
         showResult();
     }
 
+    private List<double[]> inputCross()
+    {
+        List<double[]> dataset_inputsCross = new List<double[]>();
 
+        for (int i = 0; i < nbInput; i++)
+        {
+            double rand = UnityEngine.Random.Range(-100, 100);
+            rand = rand / 100.0;
+            double rand_2 = UnityEngine.Random.Range(-100, 100);
+            rand_2 = rand_2 / 100.0;
+            dataset_inputsCross.Add(new double[] { rand, rand_2 });
+        }
+
+        return dataset_inputsCross;
+    }
+
+    private List<double[]> outputCross(List<double[]> inputs)
+    {
+        List<double[]> dataset_outputsCross = new List<double[]>();
+
+        for (int i = 0; i < nbInput; i++)
+        {
+            if(Math.Abs(inputs[i][0]) <= 0.3 || Math.Abs(inputs[i][1]) <= 0.3)
+            {
+                dataset_outputsCross.Add(new double[] { 1 });
+            }
+            else
+            {
+                dataset_outputsCross.Add(new double[] { -1 });
+
+            }
+            
+        }
+
+        return dataset_outputsCross;
+    }
     private void spawnSphereTest()
     {
         spawn = new GameObject();
         spawn.name = "Tests";
-        foreach(Vector2 p in points.positions)
+        foreach(double[] point in dataset_inputs)
         {
+            Vector2 p = new Vector2((float)point[0], (float)point[1]);
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.transform.localScale /= 30;
             sphere.transform.position = new Vector3(p.x, 0, p.y);
             sphere.name = "Sphere pos " + p.x + " " + p.y;
             sphere.transform.parent = spawn.transform;
