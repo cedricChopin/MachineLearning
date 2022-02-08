@@ -6,7 +6,7 @@
 int main()
 {
     int nbInput = 3;
-    auto npl = new int[] { 2, 3, 4, 1 };
+    auto npl = new int[] { 2, 3 };
     double** dataset_inputs = new double* [nbInput];
     dataset_inputs[0] = new double[] {0, 0};
     dataset_inputs[1] = new double[] {1, 0};
@@ -19,7 +19,9 @@ int main()
     dataset_expected_outputs[2] = new double[] {-1};
     //dataset_expected_outputs[3] = new double[] {-1};
 
-    auto model = createMlpModel(npl, 4);
+    auto model = createMlpModel(npl, 2);
+    double* res = predictMlpModelClassification(model, dataset_inputs[0], true);
+    std::cout << res[1] <<"  " << res[2] << "  " << res[3] << std::endl;
     std::cout << "Prediction : " << std::endl;
     for (int i = 0; i < nbInput; i++) {
         double* res = predictMlpModelClassification(model, dataset_inputs[i], true);

@@ -67,7 +67,7 @@ public class UseDllBehaviour : MonoBehaviour
             {
                 var resultPtr = MyLibWrapper.predictMlpModelClassification(modelPtr, dataset_inputs[i], true);
                 var result = new double[npl[npl.Length - 1] + 1];
-                Marshal.Copy(resultPtr, result, 0, 2);
+                Marshal.Copy(resultPtr, result, 0, npl[npl.Length - 1] + 1);
                 result = result.Skip(1).ToArray();
                 resultBeforeTraining.Add(result);
             }
@@ -78,10 +78,10 @@ public class UseDllBehaviour : MonoBehaviour
             {
                 var resultPtr = MyLibWrapper.predictMlpModelClassification(modelPtr, dataset_inputs[i], true);
                 var result = new double[npl[npl.Length - 1] + 1];
-                Marshal.Copy(resultPtr, result, 0, 2);
+                Marshal.Copy(resultPtr, result, 0, npl[npl.Length - 1] + 1);
                 result = result.Skip(1).ToArray();
-                //resultAfterTraining.Add(result);
-                resultAfterTraining.Add(dataset_expected_outputs[i]);
+                resultAfterTraining.Add(result);
+                //resultAfterTraining.Add(dataset_expected_outputs[i]);
             }
 
             spawnSphereTest(); 
@@ -201,7 +201,22 @@ public class UseDllBehaviour : MonoBehaviour
         for (int i = 1; i < pos.Length; ++i)
         {
             //pos[i].gameObject.GetComponent<Renderer>().material.color = resultAfterTraining[i - 1] < 0 ? Color.red : Color.blue;
-            pos[i].gameObject.GetComponent<Renderer>().material.color = new Color((float)resultAfterTraining[i - 1][0], (float)resultAfterTraining[i - 1][1], (float)resultAfterTraining[i - 1][2]) ;
+            float r = 0;
+            float g = 0;
+            float b = 0;
+            if (resultAfterTraining[i - 1][0] > resultAfterTraining[i - 1][1] && resultAfterTraining[i - 1][0] > resultAfterTraining[i - 1][2])
+            {
+                r = 1;
+            }
+            else if (resultAfterTraining[i - 1][1] > resultAfterTraining[i - 1][0] && resultAfterTraining[i - 1][1] > resultAfterTraining[i - 1][2])
+            {
+                g = 1;
+            }
+            else if (resultAfterTraining[i - 1][2] > resultAfterTraining[i - 1][0] && resultAfterTraining[i - 1][2] > resultAfterTraining[i - 1][1])
+            {
+                b = 1;
+            }
+            pos[i].gameObject.GetComponent<Renderer>().material.color = new Color(r, g, b) ;
         }
         
     }
