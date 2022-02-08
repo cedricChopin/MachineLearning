@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -10,12 +11,12 @@ public class UseDllBehaviour : MonoBehaviour
     // Start is called before the first frame update
     public Points points;
     public FloatList outputExpected;
-    public int[] npl  = new int[] { 2, 3, 4, 1 };
+    public int[] npl  = new int[] { 2, 3, 4, 3 };
     private int nbInput;
     public List<double[]> dataset_inputs;
     public List<double[]> dataset_expected_outputs;
-    public double[] resultBeforeTraining;
-    public double[] resultAfterTraining;
+    public List<double[]> resultBeforeTraining;
+    public List<double[]> resultAfterTraining;
     List<double[]> dataset_inputsCross;
     List<double[]> dataset_outputsCross;
     private GameObject spawn;
@@ -26,7 +27,7 @@ public class UseDllBehaviour : MonoBehaviour
         nbInput = points.positions.Count;
         nbInput = 500;
         dataset_inputsCross = inputCross();
-        dataset_outputsCross = outputCross(dataset_inputsCross);
+        dataset_outputsCross = outputLinear3Classes(dataset_inputsCross);
         if (points.positions.Count != outputExpected.Output.Count)
         {
             EditorApplication.isPlaying = false;
@@ -61,24 +62,26 @@ public class UseDllBehaviour : MonoBehaviour
                 Marshal.Copy(dataset_expected_outputs[i], 0, PtrExpectedOutputs[i], dataset_expected_outputs[i].Length);
             }
 
-            resultBeforeTraining = new double[nbInput];
+            resultBeforeTraining = new List<double[]>();
             for (int i = 0; i < nbInput; i++)
             {
                 var resultPtr = MyLibWrapper.predictMlpModelClassification(modelPtr, dataset_inputs[i], true);
-                var result = new double[2];
+                var result = new double[npl[npl.Length - 1] + 1];
                 Marshal.Copy(resultPtr, result, 0, 2);
-                resultBeforeTraining[i] = result[1];
+                result = result.Skip(1).ToArray();
+                resultBeforeTraining.Add(result);
             }
             MyLibWrapper.trainMlpModel(modelPtr, PtrSampleInputs, PtrExpectedOutputs, nbInput, nbInput, true, 0.01, 100000);
             
-            resultAfterTraining = new double[nbInput];
+            resultAfterTraining = new List<double[]>();
             for (int i = 0; i < nbInput; i++)
             {
                 var resultPtr = MyLibWrapper.predictMlpModelClassification(modelPtr, dataset_inputs[i], true);
-                var result = new double[2];
+                var result = new double[npl[npl.Length - 1] + 1];
                 Marshal.Copy(resultPtr, result, 0, 2);
-                resultAfterTraining[i] = result[1];
-                //resultAfterTraining[i] = dataset_expected_outputs[i][0];
+                result = result.Skip(1).ToArray();
+                //resultAfterTraining.Add(result);
+                resultAfterTraining.Add(dataset_expected_outputs[i]);
             }
 
             spawnSphereTest(); 
@@ -144,6 +147,38 @@ public class UseDllBehaviour : MonoBehaviour
 
         return dataset_outputsCross;
     }
+
+
+    private List<double[]> outputLinear3Classes(List<double[]> inputs)
+    {
+        List<double[]> dataset_outputsCross = new List<double[]>();
+
+        for (int i = 0; i < nbInput; i++)
+        {
+            if ((-inputs[i][0] - inputs[i][1]  - 0.5 > 0) && (inputs[i][1] < 0) && (inputs[i][0] - inputs[i][1] - 0.5 < 0)) 
+            {
+                dataset_outputsCross.Add(new double[] { 1, 0, 0 });
+            }
+            else if ((-inputs[i][0] - inputs[i][1] - 0.5 < 0) && (inputs[i][1] > 0) && (inputs[i][0] - inputs[i][1] - 0.5 < 0))
+            {
+                dataset_outputsCross.Add(new double[] { 0, 1, 0 });
+
+            }
+            else if ((-inputs[i][0] - inputs[i][1] - 0.5 < 0) && (inputs[i][1] < 0) && (inputs[i][0] - inputs[i][1] - 0.5 > 0))
+            {
+                dataset_outputsCross.Add(new double[] { 0, 0, 1 });
+
+            }
+            else
+            {
+                dataset_outputsCross.Add(new double[] { 0, 0, 0 });
+
+            }
+
+        }
+
+        return dataset_outputsCross;
+    }
     private void spawnSphereTest()
     {
         spawn = new GameObject();
@@ -165,7 +200,8 @@ public class UseDllBehaviour : MonoBehaviour
         Transform[] pos = spawn.GetComponentsInChildren<Transform>();
         for (int i = 1; i < pos.Length; ++i)
         {
-            pos[i].gameObject.GetComponent<Renderer>().material.color = resultAfterTraining[i - 1] < 0 ? Color.red : Color.blue;
+            //pos[i].gameObject.GetComponent<Renderer>().material.color = resultAfterTraining[i - 1] < 0 ? Color.red : Color.blue;
+            pos[i].gameObject.GetComponent<Renderer>().material.color = new Color((float)resultAfterTraining[i - 1][0], (float)resultAfterTraining[i - 1][1], (float)resultAfterTraining[i - 1][2]) ;
         }
         
     }
