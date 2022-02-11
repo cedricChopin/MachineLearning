@@ -154,9 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   points: {fileID: 11400000, guid: 9a0adec457de45b4d92c72e1e61b3e68, type: 2}
   outputExpected: {fileID: 11400000, guid: 359ccb574334cf140bf9dff21c247793, type: 2}
-  npl: 020000000400000001000000
-  resultBeforeTraining: []
-  resultAfterTraining: []
+  npl: 0200000003000000
 --- !u!4 &264655869
 Transform:
   m_ObjectHideFlags: 0
