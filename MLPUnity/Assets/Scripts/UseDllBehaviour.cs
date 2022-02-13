@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using ESGI.Common;
 using UnityEditor;
+using System.IO;
 
 public class UseDllBehaviour : MonoBehaviour
 {
@@ -19,13 +20,37 @@ public class UseDllBehaviour : MonoBehaviour
     public List<double[]> resultAfterTraining;
     List<double[]> dataset_inputsCross;
     List<double[]> dataset_outputsCross;
+
+    List<double[]> dataset_inputsImage;
+    List<double[]> dataset_outputsImage;
     private GameObject spawn;
     private IntPtr modelPtr;
+    private RetrieveFiles retrieveFiles;
     void Start()
     {
-        
-        nbInput = points.positions.Count;
-        nbInput = 500;
+        dataset_inputsImage = new List<double[]>();
+        dataset_outputsImage = new List<double[]>();
+        retrieveFiles = GameObject.Find("Files").GetComponent<RetrieveFiles>();
+        var dictionaryFiles = RetrieveFiles.GetDictionaryGenresFiles("GenresBis");
+        int indexDir = 0;
+        foreach (KeyValuePair<string, List<List<double>>> keyValue in dictionaryFiles)
+        {
+            string key = keyValue.Key;
+            List<List<double>> value = keyValue.Value;
+            foreach (var file in value)
+            {
+                //var pixels = RetrieveFiles.getPixelsFromImage(file);
+                var pixels = file;
+                dataset_inputsImage.Add(pixels.ToArray());
+                var output = new double[4] { -1, -1, -1, -1 };
+                output[indexDir] = 1;
+                dataset_outputsImage.Add(output);
+
+            }
+            indexDir++;
+        }
+
+        nbInput = dataset_inputsImage.Count;
         dataset_inputsCross = inputCross();
         dataset_outputsCross = outputLinear3Classes(dataset_inputsCross);
         if (points.positions.Count != outputExpected.Output.Count)
@@ -45,8 +70,8 @@ public class UseDllBehaviour : MonoBehaviour
         {
             dataset_expected_outputs.Add(new double[] { resExpected });
         }
-        dataset_inputs = dataset_inputsCross;
-        dataset_expected_outputs = dataset_outputsCross;
+        dataset_inputs = dataset_inputsImage;
+        dataset_expected_outputs = dataset_outputsImage;
         
         try
         {
@@ -71,7 +96,7 @@ public class UseDllBehaviour : MonoBehaviour
                 result = result.Skip(1).ToArray();
                 resultBeforeTraining.Add(result);
             }
-            MyLibWrapper.trainMlpModel(modelPtr, PtrSampleInputs, PtrExpectedOutputs, nbInput, nbInput, true, 0.01, 100000);
+            MyLibWrapper.trainMlpModel(modelPtr, PtrSampleInputs, PtrExpectedOutputs, nbInput, nbInput, true, 0.01, 10000);
             
             resultAfterTraining = new List<double[]>();
             for (int i = 0; i < nbInput; i++)
@@ -85,7 +110,7 @@ public class UseDllBehaviour : MonoBehaviour
             }
 
             spawnSphereTest(); 
-            showResult();
+            //showResult();
 
 
             //MyLibWrapper.destroyMlpModel(modelPtr);
